@@ -18,7 +18,7 @@ def split_into_batches(items, batch_size):
         yield full_list[i:i + batch_size]
 
 
-def create_filename(title, file_extension, content_document_id, output_directory, filename_pattern):
+def create_filename(title, file_extension, content_document_id, linked_entity_id, output_directory, filename_pattern):
     # Create filename
     if os.name == 'nt':
         # on windows, this is harder 
@@ -36,7 +36,7 @@ def create_filename(title, file_extension, content_document_id, output_directory
         clean_title = filter(lambda i: i not in bad_chars, title)
         clean_title = ''.join(list(clean_title))
 
-    filename = filename_pattern.format(output_directory, content_document_id, clean_title, file_extension)
+    filename = filename_pattern.format(output_directory, linked_entity_id, content_document_id, clean_title, file_extension)
     return filename
 
 
@@ -51,6 +51,7 @@ def get_content_document_ids(sf, output_directory, query):
         filename = create_filename(content_document["ContentDocument"]["Title"],
                                     content_document["ContentDocument"]["FileExtension"],
                                     content_document["ContentDocumentId"],
+                                    '',
                                     output_directory)
 
     return content_document_ids
@@ -75,7 +76,7 @@ def download_file(args):
                                           "Content-Type": "application/octet-stream"})
     if response.ok:
         # Save File
-        filename = create_filename(title, file_extension, content_document_id, output_directory,
+        filename = create_filename(title, file_extension, content_document_id, linked_entity_id, output_directory,
                                    filename_pattern=filename_pattern)
         with open(filename, "wb") as output_file:
             output_file.write(response.content)
@@ -137,11 +138,11 @@ def main():
     parser.add_argument('-o', '--object', metavar='object', required=False, default='ContentDocumentLink',
                         help='How are the ContentDocument selected, via \'ContentDocumentLink\' (default) or '
                              'directly from \'ContentDocument\'')
-    parser.add_argument('-f', '--filenamepattern', metavar='filenamepattern', required=False, default='{0}{1}-{2}.{3}',
+    parser.add_argument('-f', '--filenamepattern', metavar='filenamepattern', required=False, default='{0}{1}-{2}-{3}.{4}',
                         help='Specify the filename pattern for the output, available values are:'
-                             '{0} = output_directory, {1} = content_document_id, {2} title, {3} file_extension, '
-                             'Default value is: {0}{1}-{2}.{3} which will be '
-                             '/path/ContentDocumentId-Title.fileExtension')
+                             '{0} = output_directory, {1} = linked_entity_id, {2} = content_document_id, {3} title, {4} file_extension, '
+                             'Default value is: {0}{1}-{2}-{3}.{4} which will be '
+                             '/path/LinkedEntityId-ContentDocumentId-Title.fileExtension')
     args = parser.parse_args()
 
     # Get settings from config file
